@@ -37,7 +37,7 @@ int xom_fini(void) {
     return 0;
 }
 
-int xom_protect(void *addr, size_t len) {
+int xom_protect(const void *addr, size_t len) {
     if (xom_fd < 0) {
         return -1;
     }
@@ -51,7 +51,7 @@ int xom_protect(void *addr, size_t len) {
     return ioctl(xom_fd, VMPL_XOM_IOC_PROTECT, &req);
 }
 
-int xom_unprotect(void *addr, size_t len) {
+int xom_unprotect(const void *addr, size_t len) {
     if (xom_fd < 0) {
         return -1;
     }

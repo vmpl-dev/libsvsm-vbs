@@ -10,10 +10,10 @@ int xom_init(void);
 int xom_fini(void);
 
 // Protect a memory region with XOM
-int xom_protect(void *addr, size_t len);
+int xom_protect(const void *addr, size_t len);
 
 // Unprotect a memory region from XOM
-int xom_unprotect(void *addr, size_t len);
+int xom_unprotect(const void *addr, size_t len);
 
 // Protect all memory regions
 int xom_protect_all(void);
