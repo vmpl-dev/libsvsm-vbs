@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <asm/vsyscall.h>
+#include <time.h>
 
 #include "libxom.h"
 
@@ -68,6 +69,7 @@ typedef int (*callback_t)(void *addr, size_t len);
 
 static int with_procmaps(callback_t callback, void *arg) {
     int ret = 0;
+    clock_t start_time = clock();
     FILE *file = fopen("/proc/self/maps", "r");
     if (!file) {
         return -1;
@@ -100,6 +102,7 @@ static int with_procmaps(callback_t callback, void *arg) {
     }
 
     fclose(file);
+    printf("Time taken: %ld seconds\n", (clock() - start_time) / CLOCKS_PER_SEC);
     return ret;
 }
 
