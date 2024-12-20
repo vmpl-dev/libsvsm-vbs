@@ -201,7 +201,10 @@ void* shmat(int shmid, const void *shmaddr, int shmflg) {
         // Need to get the size of shared memory segment
         struct shmid_ds buf;
         if (shmctl(shmid, IPC_STAT, &buf) == 0) {
-            xom_protect(result, buf.shm_segsz);
+            // If the shm is executable, protect it
+            if (buf.shm_segsz > 0 && (buf.shm_perm.mode & 0111)) {
+                xom_protect(result, buf.shm_segsz);
+            }
         }
     }
     return result;
