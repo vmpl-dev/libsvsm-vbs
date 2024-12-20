@@ -102,7 +102,7 @@ static int with_procmaps(callback_t callback, void *arg) {
     }
 
     fclose(file);
-    printf("Time taken: %ld seconds\n", (clock() - start_time) / CLOCKS_PER_SEC);
+    printf("Time taken: %.4f seconds\n", (double)(clock() - start_time) / CLOCKS_PER_SEC);
     return ret;
 }
 
