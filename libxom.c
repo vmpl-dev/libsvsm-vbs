@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <asm/vsyscall.h>
 
 #include "libxom.h"
 
@@ -45,6 +46,7 @@ int xom_protect(void *addr, size_t len) {
         .vend = (uint64_t)addr + len
     };
 
+    printf("Protecting region: %lx-%lx\n", req.vstart, req.vend);
     return ioctl(xom_fd, VMPL_XOM_IOC_PROTECT, &req);
 }
 
@@ -58,5 +60,55 @@ int xom_unprotect(void *addr, size_t len) {
         .vend = (uint64_t)addr + len
     };
 
+    printf("Unprotecting region: %lx-%lx\n", req.vstart, req.vend);
     return ioctl(xom_fd, VMPL_XOM_IOC_UNPROTECT, &req);
+}
+
+typedef int (*callback_t)(void *addr, size_t len);
+
+static int with_procmaps(callback_t callback, void *arg) {
+    int ret = 0;
+    FILE *file = fopen("/proc/self/maps", "r");
+    if (!file) {
+        return -1;
+    }
+
+    char line[4096];
+    while (fgets(line, sizeof(line), file)) {
+        uint64_t start, end;
+        char perms[5];  // rwxp\0
+        
+        // Parse line format: start-end perms offset dev inode path
+        // Example: 7ff7c5d91000-7ff7c5db3000 r-xp 00000000 08:01 123456 /lib/x86_64-linux-gnu/libc-2.31.so
+        if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) != 3) {
+            printf("Failed to parse line: %s\n", line);
+            continue;
+        }
+
+        if (start == VSYSCALL_ADDR) {
+            printf("Skipping vsyscall region: %lx-%lx\n", start, end);
+            continue;
+        }
+
+        // Check if region is executable (x flag in perms)
+        if (perms[2] == 'x') {
+            ret = callback((void*)start, end - start);
+            if (ret < 0) {
+                return ret;
+            }
+        }
+    }
+
+    fclose(file);
+    return ret;
+}
+
+int xom_protect_all(void) {
+    printf("Protecting all memory regions\n");
+    return with_procmaps(xom_protect, NULL);
+}
+
+int xom_unprotect_all(void) {
+    printf("Unprotecting all memory regions\n");
+    return with_procmaps(xom_unprotect, NULL);
 }

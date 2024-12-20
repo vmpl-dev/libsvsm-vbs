@@ -25,11 +25,18 @@ static void init_xom(void) {
 
     // Open XOM device
     xom_init();
+
+    // Protect all memory regions
+    xom_protect_all();
 }
 
 // Cleanup when library is unloaded
 __attribute__((destructor))
 static void cleanup_xom(void) {
+    // Unprotect all memory regions
+    xom_unprotect_all();
+
+    // Finalize XOM
     xom_fini();
 }
 

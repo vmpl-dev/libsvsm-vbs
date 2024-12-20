@@ -15,4 +15,10 @@ int xom_protect(void *addr, size_t len);
 // Unprotect a memory region from XOM
 int xom_unprotect(void *addr, size_t len);
 
+// Protect all memory regions
+int xom_protect_all(void);
+
+// Unprotect all memory regions
+int xom_unprotect_all(void);
+
 #endif
