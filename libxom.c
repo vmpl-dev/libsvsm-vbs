@@ -65,10 +65,19 @@ int xom_unprotect(const void *addr, size_t len) {
     return ioctl(xom_fd, VMPL_XOM_IOC_UNPROTECT, &req);
 }
 
+int xom_commit(void) {
+    if (xom_fd < 0) {
+        return -1;
+    }
+
+    return ioctl(xom_fd, VMPL_XOM_IOC_COMMIT, NULL);
+}
+
 typedef int (*callback_t)(void *addr, size_t len);
 
 static int with_procmaps(callback_t callback, void *arg) {
     int ret = 0;
+    size_t num_pages = 0;
     clock_t start_time = clock();
     FILE *file = fopen("/proc/self/maps", "r");
     if (!file) {
@@ -98,6 +107,17 @@ static int with_procmaps(callback_t callback, void *arg) {
             if (ret < 0) {
                 return ret;
             }
+            num_pages += (end - start) >> 12;
+        }
+    }
+
+    printf("Number of pages: %zu\n", num_pages);
+    if (num_pages % VMPL_BATCH_SIZE != 0) {
+        printf("Number of pages is not a multiple of %d\n", VMPL_BATCH_SIZE);
+        ret = xom_commit();
+        if (ret < 0) {
+            printf("Failed to commit remaining %d pages\n", num_pages % VMPL_BATCH_SIZE);
+            return ret;
         }
     }
 
