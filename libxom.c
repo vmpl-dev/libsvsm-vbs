@@ -13,7 +13,7 @@
 
 #include "libxom.h"
 
-#include "vmpl-xom.h"
+#include "svsm-vbs.h"
 
 static int xom_fd = -1;
 
@@ -23,7 +23,7 @@ int xom_init(void) {
         return 0;  // Already initialized
     }
 
-    xom_fd = open("/dev/" VMPL_XOM_DEVICE_NAME, O_RDWR);
+    xom_fd = open("/dev/" SVSM_VBS_DEVICE_NAME, O_RDWR);
     return (xom_fd >= 0) ? 0 : -1;
 }
 
@@ -42,13 +42,13 @@ int xom_protect(const void *addr, size_t len) {
         return -1;
     }
 
-    struct VmplXomRequest req = {
+    struct SvsmVbsRequest req = {
         .vstart = (uint64_t)addr,
         .vend = (uint64_t)addr + len
     };
 
     printf("Protecting region: %lx-%lx\n", req.vstart, req.vend);
-    return ioctl(xom_fd, VMPL_XOM_IOC_PROTECT, &req);
+    return ioctl(xom_fd, SVSM_VBS_IOC_PROTECT, &req);
 }
 
 int xom_unprotect(const void *addr, size_t len) {
@@ -56,13 +56,13 @@ int xom_unprotect(const void *addr, size_t len) {
         return -1;
     }
 
-    struct VmplXomRequest req = {
+    struct SvsmVbsRequest req = {
         .vstart = (uint64_t)addr,
         .vend = (uint64_t)addr + len
     };
 
     printf("Unprotecting region: %lx-%lx\n", req.vstart, req.vend);
-    return ioctl(xom_fd, VMPL_XOM_IOC_UNPROTECT, &req);
+    return ioctl(xom_fd, SVSM_VBS_IOC_UNPROTECT, &req);
 }
 
 int xom_commit(void) {
@@ -70,7 +70,7 @@ int xom_commit(void) {
         return -1;
     }
 
-    return ioctl(xom_fd, VMPL_XOM_IOC_COMMIT, NULL);
+    return ioctl(xom_fd, SVSM_VBS_IOC_COMMIT, NULL);
 }
 
 #ifdef CONFIG_XOM_PROCMAPS
@@ -113,11 +113,11 @@ static int with_procmaps(callback_t callback, void *arg) {
     }
 
     printf("Number of pages: %zu\n", num_pages);
-    if (num_pages % VMPL_BATCH_SIZE != 0) {
-        printf("Number of pages is not a multiple of %d\n", VMPL_BATCH_SIZE);
+    if (num_pages % SVSM_VBS_BATCH_SIZE != 0) {
+        printf("Number of pages is not a multiple of %d\n", SVSM_VBS_BATCH_SIZE);
         ret = xom_commit();
         if (ret < 0) {
-            printf("Failed to commit remaining %d pages\n", num_pages % VMPL_BATCH_SIZE);
+            printf("Failed to commit remaining %d pages\n", num_pages % SVSM_VBS_BATCH_SIZE);
             return ret;
         }
     }
@@ -143,7 +143,7 @@ int xom_protect_all(void) {
     }
 
     clock_t start_time = clock();
-    int ret = ioctl(xom_fd, VMPL_XOM_IOC_PROTECT_ALL);
+    int ret = ioctl(xom_fd, SVSM_VBS_IOC_PROTECT_ALL);
     printf("Time taken: %.4f seconds\n", (double)(clock() - start_time) / CLOCKS_PER_SEC);
     return ret;
 }
@@ -154,7 +154,7 @@ int xom_unprotect_all(void) {
     }
 
     clock_t start_time = clock();
-    int ret = ioctl(xom_fd, VMPL_XOM_IOC_UNPROTECT_ALL);
+    int ret = ioctl(xom_fd, SVSM_VBS_IOC_UNPROTECT_ALL);
     printf("Time taken: %.4f seconds\n", (double)(clock() - start_time) / CLOCKS_PER_SEC);
     return ret;
 }
