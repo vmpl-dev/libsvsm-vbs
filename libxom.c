@@ -73,6 +73,7 @@ int xom_commit(void) {
     return ioctl(xom_fd, VMPL_XOM_IOC_COMMIT, NULL);
 }
 
+#ifdef CONFIG_XOM_PROCMAPS
 typedef int (*callback_t)(void *addr, size_t len);
 
 static int with_procmaps(callback_t callback, void *arg) {
@@ -135,3 +136,26 @@ int xom_unprotect_all(void) {
     printf("Unprotecting all memory regions\n");
     return with_procmaps(xom_unprotect, NULL);
 }
+#else
+int xom_protect_all(void) {
+    if (xom_fd < 0) {
+        return -1;
+    }
+
+    clock_t start_time = clock();
+    int ret = ioctl(xom_fd, VMPL_XOM_IOC_PROTECT_ALL);
+    printf("Time taken: %.4f seconds\n", (double)(clock() - start_time) / CLOCKS_PER_SEC);
+    return ret;
+}
+
+int xom_unprotect_all(void) {
+    if (xom_fd < 0) {
+        return -1;
+    }
+
+    clock_t start_time = clock();
+    int ret = ioctl(xom_fd, VMPL_XOM_IOC_UNPROTECT_ALL);
+    printf("Time taken: %.4f seconds\n", (double)(clock() - start_time) / CLOCKS_PER_SEC);
+    return ret;
+}
+#endif
